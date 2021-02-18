@@ -2,6 +2,7 @@ const { Schema, model } = require("mongoose");
 const bcrypt = require("bcrypt");
 
 const AuthorSchema = new Schema({
+  googleId: String,
   name: {
     type: String,
     required: true,
@@ -18,6 +19,11 @@ const AuthorSchema = new Schema({
     type: String,
     required: true,
   },
+  role: {
+    type: String,
+    required: true,
+  },
+  refreshTokens: [],
 });
 
 AuthorSchema.statics.findByCredentials = async function (email, password) {

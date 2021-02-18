@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const Author = require("./authorSchema");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const { authenticate, authorization } = require("../../weapons/AuthTools");
+const { authentica, authorization } = require("../../weapons/AuthTools");
 
 const route = express.Router();
 
@@ -15,12 +15,30 @@ passport.use(
       clientSecret: process.env.CLIENT_SECRET,
       callbackURL: process.env.CALLBACKURL,
     },
-    async (request, accessToken, refreshToken, profile, next) => {
-      console.log(profile);
+    async (accessToken, refreshToken, profile, cb) => {
+      // console.log("The profile----->", profile);
+      newUser = {
+        googleId: profile.id,
+        name: profile.name.givenName,
+        surname: profile.name.familyName,
+        email: profile.emails[0].value,
+        role: "User",
+        refreshToken: [],
+      };
+      console.log(newUser);
       try {
-        console.log("nothing here");
+        const user = await Author.findOne({ googleId: profile.id });
+        if (user) {
+          const tokens = await authentica(user);
+          next(null, { user, tokens });
+        } else {
+          const createNewUser = new Author(newUser);
+          await createNewUser.save();
+          const tokens = await authentica(createNewUser);
+          next(null, { user: createNewUser, tokens });
+        }
       } catch (error) {
-        console.log("error");
+        next(error);
       }
     }
   )
@@ -30,15 +48,18 @@ passport.serializeUser(function (user, next) {
   next(null, user);
 });
 
-route.get("/googleLogin", async (req, res, next) => {
-  try {
-    passport.authenticate("google", { scope: ["profile", "email"] });
+route.get(
+  "/googleLogin",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
 
-    res.status(201).send("ok");
-  } catch (error) {
-    console.log(error);
+route.get(
+  "/googleRedirect",
+  passport.authenticate("google"),
+  async (req, res, next) => {
+    res.send("ok");
   }
-});
+);
 
 route.post("/login", async (req, res, next) => {
   try {
@@ -48,7 +69,7 @@ route.post("/login", async (req, res, next) => {
 
     if (!author) throw new Error("YOU NEED TO CREATE A USER");
 
-    const token = await authenticate(author);
+    const token = await authentica(author);
 
     res.status(200).send(token);
   } catch (error) {

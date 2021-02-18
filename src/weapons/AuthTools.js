@@ -23,7 +23,7 @@ const verifyJWT = (token) =>
     })
   );
 
-const authenticate = async (Author) => {
+const authentica = async (Author) => {
   try {
     const token = await generateJWT({ _id: Author._id });
     Author.token = token;
@@ -58,4 +58,4 @@ const authorization = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, verifyJWT, authorization };
+module.exports = { authentica, verifyJWT, authorization };
