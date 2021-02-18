@@ -11,10 +11,7 @@ const AuthorSchema = new Schema({
     type: String,
     required: true,
   },
-  password: {
-    type: String,
-    required: true,
-  },
+  password: String,
   email: {
     type: String,
     required: true,
@@ -35,6 +32,14 @@ AuthorSchema.statics.findByCredentials = async function (email, password) {
     else return null;
   } else return null;
 };
+
+AuthorSchema.pre("validate", async function (next) {
+  const user = this;
+  const plainPW = user.password;
+  const google = user.googleId;
+
+  google || plainPW ? next() : next(new Error("No password provided"));
+});
 
 AuthorSchema.pre("save", async function (next) {
   const newUser = this;

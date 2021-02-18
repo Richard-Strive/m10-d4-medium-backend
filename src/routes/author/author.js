@@ -25,17 +25,20 @@ passport.use(
         role: "User",
         refreshToken: [],
       };
-      console.log(newUser);
+
       try {
         const user = await Author.findOne({ googleId: profile.id });
         if (user) {
-          const tokens = await authentica(user);
+          const tokens = await authentica(user._id);
           next(null, { user, tokens });
         } else {
           const createNewUser = new Author(newUser);
-          await createNewUser.save();
-          const tokens = await authentica(createNewUser);
-          next(null, { user: createNewUser, tokens });
+          const newUserC = await createNewUser.save();
+
+          console.log(newUserC);
+
+          const tokens = await authentica(newUserC._id);
+          next(null, { user: newUserC, tokens });
         }
       } catch (error) {
         next(error);
